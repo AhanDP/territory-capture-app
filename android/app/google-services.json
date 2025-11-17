@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1060359976472",
+    "firebase_url": "https://territory-capture-43e44-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "territory-capture-43e44",
+    "storage_bucket": "territory-capture-43e44.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1060359976472:android:f2170f02d32b98aecdb56d",
+        "android_client_info": {
+          "package_name": "me.territory_capture.territory_capture"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCR-z2D4PbJngODz6KnE0WASTuk9CR9Z4M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
