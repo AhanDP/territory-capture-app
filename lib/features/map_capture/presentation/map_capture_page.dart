@@ -129,6 +129,7 @@ class _MapCapturePageState extends State<MapCapturePage> {
           if (state == CaptureState.paused)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 12,
               children: [
                 _smallBtn(Icons.play_arrow, 'Resume', controller.resumeCapture),
                 _smallBtn(Icons.check, 'Finish', () {
