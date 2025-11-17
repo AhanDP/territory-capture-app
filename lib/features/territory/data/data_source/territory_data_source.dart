@@ -14,6 +14,7 @@ class FirebaseTerritoryDatasource {
         .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .get();
+
     return q.docs.map((d) => d.data()).toList();
   }
 

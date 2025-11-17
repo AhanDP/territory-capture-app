@@ -6,8 +6,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/theme/app_colors.dart';
+import '../../../shared/widgets/app_dialogs.dart';
 import '../../territory/domain/territory_entity.dart';
 import '../../territory/domain/territory_repository.dart';
+import '../../territory/presentation/territory_controller.dart';
 
 enum CaptureState { idle, capturing, paused }
 
@@ -23,8 +25,67 @@ class MapCaptureController extends GetxController {
   final points = <LatLngPoint>[].obs;
   final distanceMeters = 0.0.obs;
 
+  final markers = <Marker>{}.obs;
+
   StreamSubscription<Position>? _positionSub;
   late String _currentId;
+  final isLocationReady = false.obs;
+  Position? pos;
+  static const String startMarkerId = "start_marker";
+  static const String movingMarkerId = "moving_marker";
+
+  @override
+  Future<void> onInit() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+
+      if (permission == LocationPermission.denied) {
+        AppDialogs.instance.showError(
+          title: "Permission Needed",
+          "Location permission is required to capture territory.\n\nPlease enable it in settings.",
+          onOkPressed: () {
+            Geolocator.openAppSettings(); // ← Opens settings
+          },
+        );
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      AppDialogs.instance.showError(
+        title: "Permission Blocked",
+        "You permanently denied location permission.\n\nPlease enable it from settings.",
+        onOkPressed: () {
+          Geolocator.openAppSettings();
+        },
+      );
+      return;
+    }
+
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      AppDialogs.instance.showError(
+        title: "GPS Disabled",
+        "Please turn ON Location Services",
+        onOkPressed: () {
+          Geolocator.openLocationSettings();
+        },
+      );
+      return;
+    }
+    pos = await Geolocator.getCurrentPosition();
+    isLocationReady.value = true;
+
+    if (await Geolocator.isLocationServiceEnabled() == false) {
+      AppDialogs.instance.showError(title: 'Location off', 'Please enable location services');
+      return;
+    }
+
+    pos = await Geolocator.getCurrentPosition();
+    isLocationReady.value = true;
+    super.onInit();
+  }
 
   @override
   void onClose() {
@@ -32,35 +93,87 @@ class MapCaptureController extends GetxController {
     super.onClose();
   }
 
-  Future<void> startCapture() async {
-    _currentId = const Uuid().v4();
-    points.clear();
-    distanceMeters.value = 0.0;
+  Future<void> moveToCurrentLocation() async {
+    final pos = await Geolocator.getCurrentPosition();
+    final ctrl = mapController.value;
+    if (ctrl == null) return;
 
-    final permission = await Geolocator.checkPermission();
+    await ctrl.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(pos.latitude, pos.longitude),
+          zoom: 17,
+        ),
+      ),
+    );
+  }
+
+  Future<void> startCapture() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
     if (permission == LocationPermission.denied) {
-      final r = await Geolocator.requestPermission();
-      if (r == LocationPermission.denied) {
-        Get.snackbar('Permission denied', 'Location permission is required');
+      permission = await Geolocator.requestPermission();
+
+      if (permission == LocationPermission.denied) {
+        AppDialogs.instance.showError(
+          title: "Permission Needed",
+          "Location permission is required to capture territory.\n\nPlease enable it in settings.",
+          onOkPressed: () {
+            Geolocator.openAppSettings(); // ← Opens settings
+          },
+        );
         return;
       }
     }
-    if (await Geolocator.isLocationServiceEnabled() == false) {
-      Get.snackbar('Location off', 'Please enable location services');
+    if (permission == LocationPermission.deniedForever) {
+      AppDialogs.instance.showError(
+        title: "Permission Blocked",
+        "You permanently denied location permission.\n\nPlease enable it from settings.",
+        onOkPressed: () {
+          Geolocator.openAppSettings();
+        },
+      );
+      return;
+    }
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      AppDialogs.instance.showError(
+        title: "GPS Disabled",
+        "Please turn ON Location Services",
+        onOkPressed: () {
+          Geolocator.openLocationSettings();
+        },
+      );
       return;
     }
 
+    pos = await Geolocator.getCurrentPosition();
+    isLocationReady.value = true;
+
+    _currentId = const Uuid().v4();
+
+    points.clear();
+    polylines.clear();
+    markers.clear();
+    distanceMeters.value = 0.0;
+
     captureState.value = CaptureState.capturing;
 
-    final settings = LocationSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 4,
-      timeLimit: null,
+    markers.add(
+      Marker(
+        markerId: const MarkerId("start"),
+        position: LatLng(pos!.latitude, pos!.longitude),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: const InfoWindow(title: "Start"),
+      ),
     );
 
-    _positionSub = Geolocator.getPositionStream(locationSettings: settings).listen((pos) {
-      _onNewPosition(pos);
-    });
+    final settings = LocationSettings(
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 1,
+    );
+
+    _positionSub = Geolocator.getPositionStream(locationSettings: settings)
+        .listen(_onNewPosition);
   }
 
   void pauseCapture() {
@@ -83,12 +196,18 @@ class MapCaptureController extends GetxController {
     points.clear();
     polylines.clear();
     polygon.value = null;
+    markers.clear();
     distanceMeters.value = 0.0;
-    Get.snackbar('Discarded', 'Capture discarded');
+    AppDialogs.instance.showToast('Capture discarded');
   }
 
   void _onNewPosition(Position pos) {
-    final newPoint = LatLngPoint(lat: pos.latitude, lng: pos.longitude, timestamp: DateTime.now());
+    final newPoint = LatLngPoint(
+      lat: pos.latitude,
+      lng: pos.longitude,
+      timestamp: DateTime.now(),
+    );
+
     if (points.isNotEmpty) {
       final last = points.last;
       final added = _distanceBetween(last.lat, last.lng, newPoint.lat, newPoint.lng);
@@ -96,7 +215,20 @@ class MapCaptureController extends GetxController {
         distanceMeters.value += added;
       }
     }
+
     points.add(newPoint);
+
+    markers.removeWhere((m) => m.markerId.value == movingMarkerId);
+
+    markers.add(
+      Marker(
+        markerId: const MarkerId(movingMarkerId),
+        position: LatLng(newPoint.lat, newPoint.lng),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: const InfoWindow(title: "You"),
+      ),
+    );
+
     _updatePolyline();
     _animateCameraTo(LatLng(newPoint.lat, newPoint.lng));
   }
@@ -128,66 +260,78 @@ class MapCaptureController extends GetxController {
     final dLat = _deg2rad(lat2 - lat1);
     final dLon = _deg2rad(lon2 - lon1);
     final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_deg2rad(lat1)) * math.cos(_deg2rad(lat2)) *
-            math.sin(dLon / 2) * math.sin(dLon / 2);
+        math.cos(_deg2rad(lat1)) *
+            math.cos(_deg2rad(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return R * c;
   }
 
-  // On finish: close polygon, compute area, save
   Future<void> finishCapture(String userId) async {
     if (points.length < 3) {
-      Get.snackbar('Too few points', 'Walk a little more to capture territory');
+      AppDialogs.instance.showToast('Walk a little more to capture territory');
       return;
     }
 
-    final closed = List<LatLngPoint>.from(points);
-    if (closed.first.lat != closed.last.lat || closed.first.lng != closed.last.lng) {
-      closed.add(closed.first);
+    try {
+      final closed = List<LatLngPoint>.from(points);
+
+      if (closed.first.lat != closed.last.lat || closed.first.lng != closed.last.lng) {
+        closed.add(closed.first);
+      }
+
+      final area = _computePolygonAreaMeters(closed);
+
+      final territory = Territory(
+        id: _currentId,
+        userId: userId,
+        createdAt: DateTime.now(),
+        distanceMeters: distanceMeters.value,
+        areaSqMeters: area,
+        points: closed,
+        polylineEncoded: null,
+      );
+
+      await repository.saveTerritory(territory);
+
+      polygon.value = Polygon(
+        polygonId: PolygonId(_currentId),
+        points: closed.map((p) => LatLng(p.lat, p.lng)).toList(),
+        fillColor: const Color.fromARGB(80, 33, 150, 243),
+        strokeColor: AppColors.primary,
+        strokeWidth: 2,
+      );
+
+      captureState.value = CaptureState.idle;
+      _positionSub?.cancel();
+
+      await repository.saveTerritory(territory);
+
+      final tc = Get.find<TerritoryController>();
+      tc.loadUserTerritories(userId);
+
+      AppDialogs.instance.showSuccess('Territory saved successfully');
+    } catch (e) {
+      AppDialogs.instance.showError(title: "Error", "Failed to save territory");
     }
-
-    final area = _computePolygonAreaMeters(closed);
-
-    final territory = Territory(
-      id: _currentId,
-      userId: userId,
-      createdAt: DateTime.now(),
-      distanceMeters: distanceMeters.value,
-      areaSqMeters: area,
-      points: closed,
-      polylineEncoded: null,
-    );
-
-    await repository.saveTerritory(territory);
-
-    // show polygon
-    polygon.value = Polygon(
-      polygonId: PolygonId(_currentId),
-      points: closed.map((p) => LatLng(p.lat, p.lng)).toList(),
-      fillColor: const Color.fromARGB(80, 33, 150, 243),
-      strokeColor: AppColors.primary,
-      strokeWidth: 2,
-    );
-
-    captureState.value = CaptureState.idle;
-    _positionSub?.cancel();
-
-    Get.snackbar('Saved', 'Territory saved successfully');
-    Get.offAllNamed('/territory_list');
   }
 
   double _computePolygonAreaMeters(List<LatLngPoint> pts) {
     if (pts.length < 3) return 0.0;
     final R = 6378137.0;
     double total = 0.0;
+
     for (var i = 0; i < pts.length - 1; i++) {
       final lat1 = _deg2rad(pts[i].lat);
       final lon1 = _deg2rad(pts[i].lng);
       final lat2 = _deg2rad(pts[i + 1].lat);
       final lon2 = _deg2rad(pts[i + 1].lng);
+
       total += (lon2 - lon1) * (2 + math.sin(lat1) + math.sin(lat2));
     }
-    total = total.abs() / 2.0;
-    return (total * R * R);
+
+    return (total.abs() / 2.0) * R * R;
   }
 }

@@ -6,7 +6,7 @@ class AppColors {
 
   static const Color secondary = Color(0xFF4e3a1f);
 
-  static const Color backgroundLight = Color(0xFFf8ecd7);
+  static Color backgroundLight = Colors.grey.shade100;
   static const Color backgroundDark = Color(0xFF101414);
 
   static const Color cardLight = Color(0xFFF6F6F6);

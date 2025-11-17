@@ -30,15 +30,36 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
               Obx(() => controller.isLoading.value ? const Loader() :
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
-                  backgroundColor: context.colors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                icon: Icon(Icons.g_mobiledata_rounded, size:24, color: Colors.white),
-                label: const Text('Sign in with Google', style: TextStyle(color: Colors.white)),
+              ElevatedButton(
                 onPressed: () => controller.signInWithGoogle(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(50),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      "assets/icons/google.png",
+                      height: 22,
+                      width: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      "Sign in with Google",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               )
               ),
               const SizedBox(height:22),

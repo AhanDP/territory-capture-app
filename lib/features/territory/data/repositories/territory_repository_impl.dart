@@ -15,15 +15,18 @@ class TerritoryRepositoryImpl implements TerritoryRepository {
 
   @override
   Future<List<Territory>> getUserTerritories(String userId) async {
+
     final maps = await datasource.fetchUserTerritories(userId);
+
     return maps
         .map((m) => TerritoryDTO(
       id: m['id'],
       userId: m['userId'],
       createdAtMillis: m['createdAt'],
       distanceMeters: (m['distanceMeters'] as num).toDouble(),
-      areaSqMeters:
-      m['areaSqMeters'] != null ? (m['areaSqMeters'] as num).toDouble() : null,
+      areaSqMeters: m['areaSqMeters'] != null
+          ? (m['areaSqMeters'] as num).toDouble()
+          : null,
       points: (m['points'] as List).cast<Map<String, dynamic>>(),
     ).toDomain())
         .toList();

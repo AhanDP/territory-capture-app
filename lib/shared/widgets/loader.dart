@@ -28,7 +28,7 @@ class _LoaderState extends State<Loader> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final double size = 30;
+    final double size = 36;
     final double strokeWidth = size / 10;
     final Color color = widget.color ?? AppColors.primary;
 

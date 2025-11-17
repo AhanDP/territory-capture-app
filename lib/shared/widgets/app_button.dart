@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:territory_capture/shared/theme/app_colors.dart';
+import '../utility/extension.dart';
 
 class AppButton extends StatelessWidget {
   final VoidCallback onTap;
@@ -8,7 +10,7 @@ class AppButton extends StatelessWidget {
   const AppButton({
     required this.onTap,
     required this.text,
-    this.color = const Color(0xFF1E88E5),
+    this.color = AppColors.primary,
     super.key,
   });
 
@@ -20,7 +22,7 @@ class AppButton extends StatelessWidget {
         backgroundColor: color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: Text(text),
+      child: Text(text, style: TextStyle(color: context.colors.onPrimary, fontSize: 16, fontWeight: FontWeight.w600),),
     );
   }
 }

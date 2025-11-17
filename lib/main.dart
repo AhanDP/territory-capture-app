@@ -23,13 +23,14 @@ class TerritoryCaptureApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      navigatorKey: AppRoutes.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Territory Capture',
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: const ColorScheme.light(
+        colorScheme: ColorScheme.light(
           primary: AppColors.primary,
           onPrimary: AppColors.textPrimaryLight,
           secondary: AppColors.secondary,
