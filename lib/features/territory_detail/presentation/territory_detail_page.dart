@@ -28,8 +28,8 @@ class TerritoryDetailPage extends StatelessWidget {
         onPressed: () async {
           await controller.takeScreenshot(screenshotController);
         },
-        icon: const Icon(Icons.camera_alt),
-        label: const Text("Save Screenshot"),
+        icon: const Icon(Icons.camera_alt, color: Colors.white),
+        label: const Text("Save Screenshot", style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primary,
       ),
       body: Screenshot(

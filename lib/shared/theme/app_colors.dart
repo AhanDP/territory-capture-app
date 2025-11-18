@@ -9,7 +9,7 @@ class AppColors {
   static Color backgroundLight = Colors.grey.shade100;
   static const Color backgroundDark = Color(0xFF101414);
 
-  static const Color cardLight = Color(0xFFF6F6F6);
+  static const Color cardLight = Colors.white;
   static const Color cardDark = Color(0xFF1B1F1F);
 
   static const Color textPrimaryLight = Color(0xFF1E1E1E);

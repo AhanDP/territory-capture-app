@@ -215,20 +215,7 @@ class MapCaptureController extends GetxController {
         distanceMeters.value += added;
       }
     }
-
     points.add(newPoint);
-
-    markers.removeWhere((m) => m.markerId.value == movingMarkerId);
-
-    markers.add(
-      Marker(
-        markerId: const MarkerId(movingMarkerId),
-        position: LatLng(newPoint.lat, newPoint.lng),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: "You"),
-      ),
-    );
-
     _updatePolyline();
     _animateCameraTo(LatLng(newPoint.lat, newPoint.lng));
   }

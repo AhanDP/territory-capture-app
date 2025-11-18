@@ -12,7 +12,7 @@ class ProfilePage extends StatelessWidget {
     final auth = Get.find<LoginController>();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 100),
+      padding: const EdgeInsets.only(bottom: 100, left: 16, right: 16),
       child: Column(
         mainAxisAlignment: .spaceBetween,
         children: [
